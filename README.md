@@ -30,6 +30,26 @@ The installer:
 Double-click **`Uninstall.cmd`**. It puts the original Windows file back, restores its permissions
 and its owner (TrustedInstaller), and removes the program folder and logs.
 
+## Antivirus warning
+
+Windows Defender (and other antivirus) will likely flag the installed file, typically as
+**`Trojan:Win32/AccessibilityEscalation`**. This is a false positive, but an understandable one:
+replacing a system binary that the lock screen can launch (`sethc.exe`, `Magnify.exe`,
+`DisplaySwitch.exe`, …) with an **unsigned** executable that then runs as `SYSTEM` is exactly the
+shape of a classic privilege-escalation backdoor. Defender matches that *pattern*, not the contents
+of this code.
+
+Why this project trips it, while the real Windows file never does:
+
+- it puts an executable that Microsoft did **not** sign into `C:\Windows\System32\`
+- that executable is designed to run as `SYSTEM` from the lock screen
+
+Everything the program does is in [`src/DisplaySwitch.cs`](src/DisplaySwitch.cs) (about a hundred
+lines) — read it, and build it yourself with the installer, so you are not trusting a binary from
+anyone. To use it anyway you must consciously allow it: in **Windows Security → Virus & threat
+protection → Protection history**, choose **Allow** on the detection, or add an exclusion. If you are
+not comfortable doing that, don't install this.
+
 ## How it works
 
 When you press Win+P on the lock screen, Winlogon starts `C:\Windows\System32\DisplaySwitch.exe` as
@@ -86,3 +106,18 @@ powershell -ExecutionPolicy Bypass -File scripts\build.ps1   # output: bin\Displ
 
 ⚠️ این برنامه یکی از فایل‌های سیستمی ویندوز را عوض می‌کند. قبل از نصب کد آن را بخوانید. کد کوتاه
 است و در [`src/DisplaySwitch.cs`](src/DisplaySwitch.cs) قرار دارد.
+
+### هشدار آنتی‌ویروس
+
+به احتمال زیاد Windows Defender فایل نصب‌شده را به‌عنوان تهدید علامت می‌زند، معمولاً با نام
+**`Trojan:Win32/AccessibilityEscalation`**. این یک **هشدار اشتباه (false positive)** است، ولی
+بی‌دلیل نیست: عوض کردن یک فایل سیستمی که از صفحه‌ی قفل قابل اجراست (مثل `sethc.exe` یا
+`DisplaySwitch.exe`) با یک فایل **بدون امضا** که بعد با دسترسی `SYSTEM` اجرا می‌شود، دقیقاً شکل یک
+روش نفوذ کلاسیک است. Defender همین **الگو** را می‌شناسد، نه محتوای این کد را. فایل‌های اصلی و
+امضاشده‌ی ویندوز هیچ‌وقت علامت نمی‌خورند؛ فقط چون برنامه‌ی ما امضا ندارد این اتفاق می‌افتد.
+
+تمام کاری که برنامه می‌کند در [`src/DisplaySwitch.cs`](src/DisplaySwitch.cs) است (حدود صد خط). خودتان
+بخوانیدش و با نصب‌کننده روی سیستم خودتان بسازید، تا به فایل آماده‌ی کسی اعتماد نکنید. برای استفاده
+باید آگاهانه اجازه بدهید: در **Windows Security ← Virus & threat protection ← Protection history**
+روی هشدار گزینه‌ی **Allow** را بزنید یا فایل را در Exclusions بگذارید. اگر با این کار راحت نیستید،
+نصبش نکنید.
