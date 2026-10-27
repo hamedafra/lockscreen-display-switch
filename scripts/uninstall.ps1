@@ -17,7 +17,10 @@ try {
         Replace-System32File $OriginalExe
     }
 
-    Write-Host '[2/3] Restoring file permissions and owner (TrustedInstaller)...'
+    Write-Host '[2/3] Restoring file owner (TrustedInstaller) and permissions...'
+    # Owner first: once the ACL is restored, Administrators can no longer change it.
+    & icacls.exe $System32Exe /setowner 'NT SERVICE\TrustedInstaller' | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Could not restore the owner of $System32Exe" }
     if (Test-Path $AclBackup) {
         & icacls.exe (Split-Path $System32Exe) /restore $AclBackup | Out-Null
     }
@@ -26,8 +29,7 @@ try {
         & icacls.exe $System32Exe /inheritance:r /grant:r "${SidTrustedInstaller}:F" '*S-1-5-18:RX' "${SidAdministrators}:RX" `
             '*S-1-5-32-545:RX' '*S-1-15-2-1:RX' '*S-1-15-2-2:RX' | Out-Null
     }
-    & icacls.exe $System32Exe /setowner 'NT SERVICE\TrustedInstaller' | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "Could not restore the owner of $System32Exe" }
+    if ($LASTEXITCODE -ne 0) { throw "Could not restore the permissions of $System32Exe" }
 
     Write-Host '[3/3] Removing program files...'
     Remove-Item $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
