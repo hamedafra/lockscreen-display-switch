@@ -1,0 +1,4 @@
+# Windows scripts keep CRLF, also in "Download ZIP"
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.cs  text eol=crlf
